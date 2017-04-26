@@ -11,9 +11,6 @@ License: GPL2
 
 define( 'ALTERNATE_WP_CRON', true ); // TODO: remove this
 
-// insert auth token here, this will eventually be pulled from settings
-$url = "https://api.pinboard.in/v1/posts/recent?auth_token=&tag=";
-
 function getPosts($url) {
     $pinboard_request = wp_remote_retrieve_body(wp_remote_get($url));
     $pinboard_xml = simplexml_load_string($pinboard_request, 'SimpleXMLElement', LIBXML_NOCDATA);
@@ -27,8 +24,6 @@ function isInLastWeek($post) {
 
     return $postTime > $weekAgo;
 }
-
-$pinboard_posts = array_filter(getPosts($url), "isInLastWeek");
 
 add_filter( 'cron_schedules', 'wppb_add_weekly' ); 
 function wppb_add_weekly( $schedules ) {
@@ -48,12 +43,22 @@ if (!$timestamp) {
 
 add_action( 'wppb_schedule_links', 'wppb_post_links' );
 
+function pb_to_link($link) {    
+    return '<dt><a href="' . $link['href'] . '">' . $link['description'] . '</a></dt>' . 
+        '<dd>' . $link['extended'] . '</dd>';
+}
+
 function wppb_post_links() {
     include_once( ABSPATH . WPINC . '/pluggable.php' );
     wp_set_auth_cookie( 1 );
 
+    $url = "https://api.pinboard.in/v1/posts/recent?auth_token=&tag=";
+    $pinboard_posts = array_filter(getPosts($url), "isInLastWeek");
+
+    $post = '<dl>' . implode('', array_map('pb_to_link', $pinboard_posts)) . '</dl>';
+
     $new_post = array(
-        'post_content' => 'wppb_post_links', 
+        'post_content' => $post, 
         'post_title' => 'wppb_post_links',
         'post_status' => 'publish'
     );
