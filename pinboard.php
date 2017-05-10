@@ -32,16 +32,15 @@ function isInLastWeek($post) {
 
 add_filter('cron_schedules', 'wppb_add_weekly'); 
 function wppb_add_weekly( $schedules ) {
-  $schedules['weekly'] = array(
-    'interval' => 7 * 24 * 60 * 60, // 7 days * 24 hours * 60 minutes * 60 seconds
-    'display' => __('Once Weekly', 'wp-pinboard')
-  );
+    $schedules['weekly'] = array(
+        'interval' => 7 * 24 * 60 * 60, // 7 days * 24 hours * 60 minutes * 60 seconds
+        'display' => __('Once Weekly', 'wp-pinboard')
+    );
   
   return $schedules;
 }
 
 $timestamp = wp_next_scheduled('wppb_schedule_links');
-
 // TODO: make setting
 $next = new DateTime('next friday, 6pm');
 
