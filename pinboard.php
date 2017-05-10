@@ -42,10 +42,10 @@ function wppb_add_weekly( $schedules ) {
 
 $timestamp = wp_next_scheduled('wppb_schedule_links');
 
-if (!$timestamp) {
-    $next = new DateTime('next friday, 6pm');
+// TODO: make setting
+$next = new DateTime('next friday, 6pm');
 
-    // TODO: make setting
+if (!$timestamp || $next->getTimestamp() !== $timestamp) {
     wp_schedule_event($next->getTimestamp(), 'weekly', 'wppb_schedule_links');
 }
 
