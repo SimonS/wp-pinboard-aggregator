@@ -12,6 +12,10 @@ License: GPL2
 define('ALTERNATE_WP_CRON', true); // TODO: remove this
 define('WPPB_ROOT', plugin_dir_path(__FILE__) . '/');  
 
+$user_to_post_as = 1; // TODO: make this a setting
+$pinboard_auth_token = ''; // TODO: make this a setting
+$pinboard_tag = '';  // TODO: make this a setting
+
 function getPosts($url) {
     $pinboard_request = wp_remote_retrieve_body(wp_remote_get($url));
     $pinboard_xml = simplexml_load_string($pinboard_request, 'SimpleXMLElement', LIBXML_NOCDATA);
@@ -39,6 +43,8 @@ function wppb_add_weekly( $schedules ) {
 $timestamp = wp_next_scheduled('wppb_schedule_links');
 
 if (!$timestamp) {
+    // TODO: set an actual date time
+    // TODO: make setting
     wp_schedule_event(time(), 'weekly', 'wppb_schedule_links');
 }
 
@@ -48,9 +54,9 @@ function wppb_post_links() {
     include_once(ABSPATH . WPINC . '/pluggable.php');
     require_once(WPPB_ROOT . 'lib/wppb-templating.php');
 
-    wp_set_auth_cookie(1);
+    wp_set_auth_cookie($user_to_post_as);
 
-    $url = "https://api.pinboard.in/v1/posts/recent?auth_token=&tag=";
+    $url = "https://api.pinboard.in/v1/posts/recent?auth_token=$pinboard_auth_token&tag=$pinboard_tag";
     $pinboard_posts = array_filter(getPosts($url), "isInLastWeek");
 
     $post = pb_get_template('pinboard-posts.php', array('posts' => $pinboard_posts));
