@@ -64,8 +64,7 @@ function wppb_post_links() {
 
     $new_post = array(
         'post_content' => $post, 
-        'post_title' => 'wppb_post_links',
-        'post_status' => 'publish'
+        'post_title' => 'wppb_post_links'
     );
 
     $post_id = wp_insert_post($new_post);
