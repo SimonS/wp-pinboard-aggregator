@@ -12,6 +12,58 @@ License: GPL2
 define('ALTERNATE_WP_CRON', true); // TODO: remove this
 define('WPPB_ROOT', plugin_dir_path(__FILE__) . '/');  
 
+function doMenu() {
+    add_options_page('Pinboard Aggegator', 'Pinboard Aggegator', 'administrator', __FILE__, 'options_page_fn');
+}
+add_action('admin_menu', 'doMenu');
+
+add_action('admin_init', 'sampleoptions_init_fn' );
+
+function setting_string_fn() {
+	$options = get_option('plugin_options');
+	echo "<input id='plugin_text_string' name='plugin_options[text_string]' size='40' type='text' value='{$options['text_string']}' />";
+}
+
+function plugin_options_validate($input) {
+	// Check our textbox option field contains no HTML tags - if so strip them out
+	$input['text_string'] =  wp_filter_nohtml_kses($input['text_string']);	
+	return $input; // return validated input
+}
+
+function  section_text_fn() {
+	echo '<p>Below are some examples of different option controls.</p>';
+}
+
+function sampleoptions_init_fn() {
+	register_setting('plugin_options', 'plugin_options', 'plugin_options_validate' );
+	add_settings_section('main_section', 'Main Settings', 'section_text_fn', __FILE__);
+	add_settings_field('plugin_text_string', 'Text Input', 'setting_string_fn', __FILE__, 'main_section');
+	// add_settings_field('plugin_text_pass', 'Password Text Input', 'setting_pass_fn', __FILE__, 'main_section');
+	// add_settings_field('plugin_textarea_string', 'Large Textbox!', 'setting_textarea_fn', __FILE__, 'main_section');
+	// add_settings_field('plugin_chk2', 'A Checkbox', 'setting_chk2_fn', __FILE__, 'main_section');
+	// add_settings_field('radio_buttons', 'Select Shape', 'setting_radio_fn', __FILE__, 'main_section');
+	// add_settings_field('drop_down1', 'Select Color', 'setting_dropdown_fn', __FILE__, 'main_section');
+	// add_settings_field('plugin_chk1', 'Restore Defaults Upon Reactivation?', 'setting_chk1_fn', __FILE__, 'main_section');
+}
+
+
+function options_page_fn() {
+    ?>
+<div class="wrap">
+    <div class="icon32" id="icon-options-general"><br></div>
+    <h2>Pinboard Aggregator Settings</h2>
+    <p>Use this page to set your pinboard credentials, update schedule, etc.</p>
+    <form action="options.php" method="post">
+        <?php settings_fields('plugin_options'); ?>
+        <?php do_settings_sections(__FILE__); ?>
+        <p class="submit">
+            <input name="Submit" type="submit" class="button-primary" value="<?php esc_attr_e('Save Changes'); ?>" />
+        </p>
+    </form>
+</div>
+    <?php
+}
+
 $user_to_post_as = 1; // TODO: make this a setting
 $pinboard_auth_token = ''; // TODO: make this a setting
 $pinboard_tag = '';  // TODO: make this a setting
