@@ -19,33 +19,32 @@ add_action('admin_menu', 'doMenu');
 
 add_action('admin_init', 'sampleoptions_init_fn' );
 
-function setting_string_fn() {
-	$options = get_option('plugin_options');
-	echo "<input id='plugin_text_string' name='plugin_options[text_string]' size='40' type='text' value='{$options['text_string']}' />";
+function pb_authtoken_fn() {
+	$options = get_option('pb_options');
+    $val = isset($options['pb_authtoken']) ? $options['pb_authtoken'] : '';
+	echo "<input id='pb_authtoken' name='pb_options[pb_authtoken]' size='40' type='text' value='{$val}' />";
+}
+
+function pb_tag_fn() {
+	$options = get_option('pb_options');
+    $val = isset($options['pb_tag']) ? $options['pb_tag'] : '';
+	echo "<input id='pb_tag' name='pb_options[pb_tag]' size='40' type='text' value='{$val}' />";
 }
 
 function plugin_options_validate($input) {
-	// Check our textbox option field contains no HTML tags - if so strip them out
-	$input['text_string'] =  wp_filter_nohtml_kses($input['text_string']);	
 	return $input; // return validated input
 }
 
 function  section_text_fn() {
-	echo '<p>Below are some examples of different option controls.</p>';
+	echo '<p>Enter your pinboard preferences here.</p>';
 }
 
 function sampleoptions_init_fn() {
-	register_setting('plugin_options', 'plugin_options', 'plugin_options_validate' );
-	add_settings_section('main_section', 'Main Settings', 'section_text_fn', __FILE__);
-	add_settings_field('plugin_text_string', 'Text Input', 'setting_string_fn', __FILE__, 'main_section');
-	// add_settings_field('plugin_text_pass', 'Password Text Input', 'setting_pass_fn', __FILE__, 'main_section');
-	// add_settings_field('plugin_textarea_string', 'Large Textbox!', 'setting_textarea_fn', __FILE__, 'main_section');
-	// add_settings_field('plugin_chk2', 'A Checkbox', 'setting_chk2_fn', __FILE__, 'main_section');
-	// add_settings_field('radio_buttons', 'Select Shape', 'setting_radio_fn', __FILE__, 'main_section');
-	// add_settings_field('drop_down1', 'Select Color', 'setting_dropdown_fn', __FILE__, 'main_section');
-	// add_settings_field('plugin_chk1', 'Restore Defaults Upon Reactivation?', 'setting_chk1_fn', __FILE__, 'main_section');
+	register_setting('pb_options', 'pb_options', 'plugin_options_validate' );
+	add_settings_section('pb_section', 'Pinboard Settings', 'section_text_fn', __FILE__);
+	add_settings_field('pb_authtoken', 'Pinboard Auth Token', 'pb_authtoken_fn', __FILE__, 'pb_section');
+	add_settings_field('pb_tag', 'Pinboard Tag to filter on', 'pb_tag_fn', __FILE__, 'pb_section');
 }
-
 
 function options_page_fn() {
     ?>
@@ -54,7 +53,7 @@ function options_page_fn() {
     <h2>Pinboard Aggregator Settings</h2>
     <p>Use this page to set your pinboard credentials, update schedule, etc.</p>
     <form action="options.php" method="post">
-        <?php settings_fields('plugin_options'); ?>
+        <?php settings_fields('pb_options'); ?>
         <?php do_settings_sections(__FILE__); ?>
         <p class="submit">
             <input name="Submit" type="submit" class="button-primary" value="<?php esc_attr_e('Save Changes'); ?>" />
@@ -63,10 +62,6 @@ function options_page_fn() {
 </div>
     <?php
 }
-
-$user_to_post_as = 1; // TODO: make this a setting
-$pinboard_auth_token = ''; // TODO: make this a setting
-$pinboard_tag = '';  // TODO: make this a setting
 
 function getPosts($url) {
     $pinboard_request = wp_remote_retrieve_body(wp_remote_get($url));
@@ -94,8 +89,9 @@ function wppb_add_weekly( $schedules ) {
 
 $timestamp = wp_next_scheduled('wppb_schedule_links');
 // TODO: make setting
-$next = new DateTime('next friday, 6pm');
-
+$next = new DateTime('today, 23:40');
+// var_dump($next);
+// var_dump(new DateTime('now'));
 if (!$timestamp || $next->getTimestamp() !== $timestamp) {
     wp_schedule_event($next->getTimestamp(), 'weekly', 'wppb_schedule_links');
 }
@@ -106,17 +102,24 @@ function wppb_post_links() {
     include_once(ABSPATH . WPINC . '/pluggable.php');
     require_once(WPPB_ROOT . 'lib/wppb-templating.php');
 
+    $options = get_option('pb_options');
+
+    $user_to_post_as = 1; // TODO: make this a setting
+    $pinboard_auth_token = $options['pb_authtoken'];
+    $pinboard_tag = $options['pb_tag']; 
+
     wp_set_auth_cookie($user_to_post_as);
 
     $url = "https://api.pinboard.in/v1/posts/recent?auth_token=$pinboard_auth_token&tag=$pinboard_tag";
     $pinboard_posts = array_filter(getPosts($url), "isInLastWeek");
 
     $post = pb_get_template('pinboard-posts.php', array('posts' => $pinboard_posts));
-
+    // var_dump($post);die;
     $new_post = array(
         'post_content' => $post, 
-        'post_title' => 'wppb_post_links'
+        'post_title' => 'Pinboard posts for...',
+        'post_status' => 'publish'
     );
 
     $post_id = wp_insert_post($new_post);
-}
+};
